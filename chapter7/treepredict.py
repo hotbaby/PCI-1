@@ -51,6 +51,11 @@ def divideset(rows, column, value):
 # Create counts of possible results (the last column of 
 # each row is the result)
 def uniquecounts(rows):
+    """
+    统计数据集的结果
+    :param rows: 数据集
+    :return: 统计结果
+    """
     results = {}
     for row in rows:
         # The result is the last column
@@ -135,13 +140,14 @@ def drawtree(tree, jpeg='tree.jpg'):
 
 def drawnode(draw, tree, x, y):
     if tree.results == None:
+        # 分支节点
         # Get the width of each branch
-        w1 = getwidth(tree.fb) * 100
-        w2 = getwidth(tree.tb) * 100
+        w1 = getwidth(tree.fb) * 100    # 左子树的宽度
+        w2 = getwidth(tree.tb) * 100    # 右子树的宽度
 
         # Determine the total space required by this node
-        left = x - (w1 + w2) / 2
-        right = x + (w1 + w2) / 2
+        left = x - (w1 + w2) / 2    # 左子树偏移
+        right = x + (w1 + w2) / 2   # 右子树偏移
 
         # Draw the condition string
         draw.text((x - 20, y - 10), str(tree.col) + ':' + str(tree.value), (0, 0, 0))
@@ -154,6 +160,7 @@ def drawnode(draw, tree, x, y):
         drawnode(draw, tree.fb, left + w1 / 2, y + 100)
         drawnode(draw, tree.tb, right - w2 / 2, y + 100)
     else:
+        # 叶子节点
         txt = ' \n'.join(['%s:%d' % v for v in tree.results.items()])
         draw.text((x - 20, y), txt, (0, 0, 0))
 
@@ -282,7 +289,7 @@ def buildtree(rows, scoref=entropy):
                 best_criteria = (col, value)
                 best_sets = (set1, set2)
 
-    # 如果best_gain大于0，则创建一个包含分类后两个数据集的节点，否则返回当前数据集节点
+    # 如果best_gain大于0，则创建一个包含两个分支的节点，否则返回当前数据集节点
     # Create the sub branches
     if best_gain > 0:
         trueBranch = buildtree(best_sets[0])
