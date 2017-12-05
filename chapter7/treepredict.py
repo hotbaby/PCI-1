@@ -2,6 +2,32 @@
 
 """
 决策树模型
+
+decision node：
+    col: 列纬度索引
+    value: col列的取值
+    results: 中间节点，该值为None；叶子节点，该值为结果集统计
+    tb: true branch
+    fb: false branch
+
+    中间节点(包括根节点)：results为None
+    叶子节点：results为结果集统计信息
+
+divide set: 根据column, value分割数据集
+
+unique counts: 统计数据集结果
+
+score function: entropy, giniimpurity, variance
+
+build tree: 构建决策树
+
+prune: 为防止测试数据过度拟合，对树进行剪枝，即当两个叶子节点增益小于(定义的)最小阈值，合并两个叶子节点
+
+draw tree: 绘制(决策)树
+
+classify: 预测数据
+
+mdclassify: 对于缺失数据进行预测
 """
 
 my_data = [['slashdot', 'USA', 'yes', 18, 'None'],
@@ -186,6 +212,7 @@ def classify(observation, tree):
 
 def prune(tree, mingain):
     # If the branches aren't leaves, then prune them
+    # 如何两个分支都不是叶子节点
     if tree.tb.results == None:
         prune(tree.tb, mingain)
     if tree.fb.results == None:
@@ -193,6 +220,7 @@ def prune(tree, mingain):
 
     # If both the subbranches are now leaves, see if they
     # should merged
+    # 如果两个节点是叶子节点，并且信息增益小于最小增益，则合并两个叶子节点
     if tree.tb.results != None and tree.fb.results != None:
         # Build a combined dataset
         tb, fb = [], []
