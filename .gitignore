@@ -41,3 +41,5 @@ venv
 # PyCharm
 .idea
 .vscode
+data/.DS_Store
+data/ml-latest-small/
