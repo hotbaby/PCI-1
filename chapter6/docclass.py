@@ -12,7 +12,7 @@ def getwords(doc):
              if len(s) > 2 and len(s) < 20]
 
     # Return the unique set of words only
-    returdocclass.getwords('python is a dynamic language')
+    return dict([(w, 1) for w in words])
 
 
 class classifier:
