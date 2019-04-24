@@ -21,7 +21,7 @@ score function: entropy, giniimpurity, variance
 
 build tree: 构建决策树
 
-prune: 为防止测试数据过度拟合，对树进行剪枝，即当两个叶子节点增益小于(定义的)最小阈值，合并两个叶子节点
+prune: 为防止测试数据过度拟合，对树进行剪枝，即当两个叶子节点增益小于(定义的)最小阈值，合并两个叶子节点a
 
 draw tree: 绘制(决策)树
 
@@ -30,6 +30,7 @@ classify: 预测数据
 mdclassify: 对于缺失数据进行预测
 """
 
+from PIL import Image, ImageDraw
 my_data = [['slashdot', 'USA', 'yes', 18, 'None'],
            ['google', 'France', 'yes', 23, 'Premium'],
            ['digg', 'USA', 'yes', 24, 'Basic'],
@@ -53,8 +54,8 @@ class decisionnode:
         self.col = col
         self.value = value
         self.results = results
-        self.tb = tb
-        self.fb = fb
+        self.tb = tb    # Tree branch
+        self.fb = fb    # False
 
 
 # Divides a set on a specific column. Can handle numeric
@@ -64,9 +65,9 @@ def divideset(rows, column, value):
     # the first group (true) or the second group (false)
     split_function = None
     if isinstance(value, int) or isinstance(value, float):
-        split_function = lambda row: row[column] >= value
+        def split_function(row): return row[column] >= value
     else:
-        split_function = lambda row: row[column] == value
+        def split_function(row): return row[column] == value
 
     # Divide the rows into two sets and return them
     set1 = [row for row in rows if split_function(row)]
@@ -74,7 +75,7 @@ def divideset(rows, column, value):
     return (set1, set2)
 
 
-# Create counts of possible results (the last column of 
+# Create counts of possible results (the last column of
 # each row is the result)
 def uniquecounts(rows):
     """
@@ -86,7 +87,8 @@ def uniquecounts(rows):
     for row in rows:
         # The result is the last column
         r = row[len(row) - 1]
-        if r not in results: results[r] = 0
+        if r not in results:
+            results[r] = 0
         results[r] += 1
     return results
 
@@ -100,7 +102,8 @@ def giniimpurity(rows):
     for k1 in counts:
         p1 = float(counts[k1]) / total
         for k2 in counts:
-            if k1 == k2: continue
+            if k1 == k2:
+                continue
             p2 = float(counts[k2]) / total
             imp += p1 * p2
     return imp
@@ -115,7 +118,7 @@ def entropy(rows):
     :return: 信息熵
     """
     from math import log
-    log2 = lambda x: log(x) / log(2)
+    def log2(x): return log(x) / log(2)
     results = uniquecounts(rows)
     # Now calculate the entropy
     ent = 0.0
@@ -141,16 +144,15 @@ def printtree(tree, indent=''):
 
 
 def getwidth(tree):
-    if tree.tb == None and tree.fb == None: return 1
+    if tree.tb == None and tree.fb == None:
+        return 1
     return getwidth(tree.tb) + getwidth(tree.fb)
 
 
 def getdepth(tree):
-    if tree.tb == None and tree.fb == None: return 0
+    if tree.tb == None and tree.fb == None:
+        return 0
     return max(getdepth(tree.tb), getdepth(tree.fb)) + 1
-
-
-from PIL import Image, ImageDraw
 
 
 def drawtree(tree, jpeg='tree.jpg'):
@@ -193,8 +195,10 @@ def drawnode(draw, tree, x, y):
 
 def classify(observation, tree):
     if tree.results != None:
+        # 叶子节点
         return tree.results
     else:
+        # 非叶子节点
         v = observation[tree.col]
         branch = None
         if isinstance(v, int) or isinstance(v, float):
@@ -213,15 +217,16 @@ def classify(observation, tree):
 def prune(tree, mingain):
     # If the branches aren't leaves, then prune them
     # 如何两个分支都不是叶子节点
-    if tree.tb.results == None:
+    if tree.tb.results is None:
         prune(tree.tb, mingain)
-    if tree.fb.results == None:
+
+    if tree.fb.results is None:
         prune(tree.fb, mingain)
 
     # If both the subbranches are now leaves, see if they
     # should merged
     # 如果两个节点是叶子节点，并且信息增益小于最小增益，则合并两个叶子节点
-    if tree.tb.results != None and tree.fb.results != None:
+    if tree.tb.results is not None and tree.fb.results is not None:
         # Build a combined dataset
         tb, fb = [], []
         for v, c in tree.tb.results.items():
@@ -250,8 +255,10 @@ def mdclassify(observation, tree):
             tw = float(tcount) / (tcount + fcount)
             fw = float(fcount) / (tcount + fcount)
             result = {}
-            for k, v in tr.items(): result[k] = v * tw
-            for k, v in fr.items(): result[k] = v * fw
+            for k, v in tr.items():
+                result[k] = v * tw
+            for k, v in fr.items():
+                result[k] = v * fw
             return result
         else:
             if isinstance(v, int) or isinstance(v, float):
@@ -268,7 +275,8 @@ def mdclassify(observation, tree):
 
 
 def variance(rows):
-    if len(rows) == 0: return 0
+    if len(rows) == 0:
+        return 0
     data = [float(row[len(row) - 1]) for row in rows]
     mean = sum(data) / len(data)
     variance = sum([(d - mean) ** 2 for d in data]) / len(data)
@@ -282,7 +290,8 @@ def buildtree(rows, scoref=entropy):
     :param scoref: 得分函数，默认为信息熵
     :return: 树节点
     """
-    if len(rows) == 0: return decisionnode()
+    if len(rows) == 0:
+        return decisionnode()
 
     # 计算当前信息熵
     current_score = scoref(rows)
