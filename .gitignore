@@ -44,3 +44,4 @@ venv
 data/.DS_Store
 data/ml-latest-small/
 .DS_Store
+.pytest_cache
