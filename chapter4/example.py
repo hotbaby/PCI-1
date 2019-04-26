@@ -1,5 +1,7 @@
-get_ipython().magic(u'logstart example.py append')
 import nn
+
+get_ipython().magic(u'logstart example.py append')
+
 online, pharmacy = 1, 2
 spam, notspam = 1, 2
 possible = [spam, notspam]

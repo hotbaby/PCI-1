@@ -58,6 +58,7 @@ class classifier:
         self.incc(cat)
 
     def fprob(self, f, cat):
+        # P(feature|category)
         if self.catcount(cat) == 0:
             return 0
 
@@ -99,6 +100,8 @@ class naivebayes(classifier):
 
         # P(document|category)
         docprob = self.docprob(item, cat)
+
+        # P(document, category)
         return docprob*catprob
 
     def setthreshold(self, cat, t):

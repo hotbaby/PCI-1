@@ -101,21 +101,21 @@ def printclust(clust, labels=None, n=0):
         print '-'
     else:
         # positive id means that this is an endpoint
-        if labels == None:
+        if labels is None:
             print clust.id
         else:
             print labels[clust.id]
 
     # now print the right and left branches
-    if clust.left != None:
+    if clust.left is not None:
         printclust(clust.left, labels=labels, n=n+1)
-    if clust.right != None:
+    if clust.right is not None:
         printclust(clust.right, labels=labels, n=n+1)
 
 
 def getheight(clust):
     # Is this an endpoint? Then the height is just 1
-    if clust.left == None and clust.right == None:
+    if clust.left is None and clust.right is None:
         return 1
 
     # Otherwise the height is the same of the heights of
@@ -186,6 +186,7 @@ def rotatematrix(data):
     return newdata
 
 
+# k-means cluster
 def kcluster(rows, distance=pearson, k=4):
     # Determine the minimum and maximum values for each point
     ranges = [(min([row[i] for row in rows]), max([row[i] for row in rows]))

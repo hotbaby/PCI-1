@@ -1,6 +1,6 @@
-from pylab import *
-from random import random, randint
 import math
+from pylab import *     # NOQA
+from random import random, randint
 
 
 def wineprice(rating, age):
