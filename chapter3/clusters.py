@@ -1,3 +1,5 @@
+# encoding: utf8
+
 import random
 from math import sqrt
 from PIL import Image, ImageDraw
@@ -193,6 +195,7 @@ def kcluster(rows, distance=pearson, k=4):
               for i in range(len(rows[0]))]
 
     # Create k randomly placed centroids
+    # 随机选择K个均值向量
     clusters = [[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0]
                  for i in range(len(rows[0]))] for j in range(k)]
 
@@ -201,6 +204,7 @@ def kcluster(rows, distance=pearson, k=4):
         print 'Iteration %d' % t
         bestmatches = [[] for i in range(k)]
 
+        # 根据每个向量到K个均值向量的距离，将向量K个组
         # Find which centroid is the closest for each row
         for j in range(len(rows)):
             row = rows[j]
@@ -212,11 +216,13 @@ def kcluster(rows, distance=pearson, k=4):
             bestmatches[bestmatch].append(j)
 
         # If the results are the same as last time, this is complete
+        # 分类不再变化，退出迭代
         if bestmatches == lastmatches:
             break
         lastmatches = bestmatches
 
         # Move the centroids to the average of their members
+        # 求每个组向量的均值
         for i in range(k):
             avgs = [0.0]*len(rows[0])
             if len(bestmatches[i]) > 0:
