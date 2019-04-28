@@ -56,13 +56,14 @@ class searchnet:
             "select rowid from hiddennode where create_key='%s'" % createkey).fetchone()
 
         # If not, create it
-        if res == None:
+        if res is None:
             cur = self.con.execute(
                 "insert into hiddennode (create_key) values ('%s')" % createkey)
             hiddenid = cur.lastrowid
             # Put in some default weights
             for wordid in wordids:
                 self.setstrength(wordid, hiddenid, 0, 1.0/len(wordids))
+
             for urlid in urls:
                 self.setstrength(hiddenid, urlid, 1, 0.1)
             self.con.commit()
@@ -74,6 +75,7 @@ class searchnet:
                 'select toid from wordhidden where fromid=%d' % wordid)
             for row in cur:
                 l1[row[0]] = 1
+
         for urlid in urlids:
             cur = self.con.execute(
                 'select fromid from hiddenurl where toid=%d' % urlid)
@@ -82,16 +84,18 @@ class searchnet:
         return l1.keys()
 
     def setupnetwork(self, wordids, urlids):
-            # value lists
+        # value lists
         self.wordids = wordids
         self.hiddenids = self.getallhiddenids(wordids, urlids)
         self.urlids = urlids
 
+        # 节点输出
         # node outputs
         self.ai = [1.0]*len(self.wordids)
         self.ah = [1.0]*len(self.hiddenids)
         self.ao = [1.0]*len(self.urlids)
 
+        # 建立权重矩阵
         # create weights matrix
         self.wi = [[self.getstrength(wordid, hiddenid, 0)
                     for hiddenid in self.hiddenids]
@@ -102,9 +106,11 @@ class searchnet:
 
     def feedforward(self):
         # the only inputs are the query words
+        # 查询单词是仅有的输入
         for i in range(len(self.wordids)):
             self.ai[i] = 1.0
 
+        # 隐藏层节点的活跃程度
         # hidden activations
         for j in range(len(self.hiddenids)):
             sum = 0.0
@@ -112,6 +118,7 @@ class searchnet:
                 sum = sum + self.ai[i] * self.wi[i][j]
             self.ah[j] = tanh(sum)
 
+        # 输出层节点的活跃程度
         # output activations
         for k in range(len(self.urlids)):
             sum = 0.0
@@ -156,11 +163,14 @@ class searchnet:
         # generate a hidden node if necessary
         self.generatehiddennode(wordids, urlids)
 
+        # 前馈法
         self.setupnetwork(wordids, urlids)
         self.feedforward()
+
+        # 反向传播训练
         targets = [0.0]*len(urlids)
         targets[urlids.index(selectedurl)] = 1.0
-        error = self.backPropagate(targets)
+        self.backPropagate(targets)
         self.updatedatabase()
 
     def updatedatabase(self):
