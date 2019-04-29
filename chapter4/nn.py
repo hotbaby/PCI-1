@@ -1,3 +1,5 @@
+# encoding: utf8
+
 from math import tanh
 import sqlite3 as sqlite
 

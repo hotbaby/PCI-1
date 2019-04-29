@@ -1,8 +1,12 @@
+# encoding: utf8
+
+import re
 import nn
 import urllib2
+import requests
+import sqlite3 as sqlite
 from BeautifulSoup import *     # NOQA
 from urlparse import urljoin
-from pysqlite2 import dbapi2 as sqlite
 
 mynet = nn.searchnet('nn.db')
 
@@ -27,7 +31,7 @@ class crawler:
         cur = self.con.execute(
             "select rowid from %s where %s='%s'" % (table, field, value))
         res = cur.fetchone()
-        if res == None:
+        if res is None:
             cur = self.con.execute(
                 "insert into %s (%s) values ('%s')" % (table, field, value))
             return cur.lastrowid
@@ -59,7 +63,7 @@ class crawler:
 
     def gettextonly(self, soup):
         v = soup.string
-        if v == Null:
+        if v is None:
             c = soup.contents
             resulttext = ''
             for t in c:
@@ -80,7 +84,7 @@ class crawler:
 
     # Add a link between two pages
     def addlinkref(self, urlFrom, urlTo, linkText):
-        words = self.separateWords(linkText)
+        words = self.separatewords(linkText)
         fromid = self.getentryid('urllist', 'url', urlFrom)
         toid = self.getentryid('urllist', 'url', urlTo)
         if fromid == toid:
@@ -101,12 +105,16 @@ class crawler:
             newpages = {}
             for page in pages:
                 try:
-                    c = urllib2.urlopen(page)
-                except:
+                    # c = urllib2.urlopen(page)
+                    print 'crawl %s' % page
+                    resp = requests.get(page, timeout=3)
+                except Exception as e:
+                    print e
                     print "Could not open %s" % page
                     continue
+
                 try:
-                    soup = BeautifulSoup(c.read())
+                    soup = BeautifulSoup(resp.content)
                     self.addtoindex(page, soup)
 
                     links = soup('a')
@@ -122,23 +130,27 @@ class crawler:
                             self.addlinkref(page, url, linkText)
 
                     self.dbcommit()
-                except:
+                except Exception as e:
+                    print e
                     print "Could not parse page %s" % page
 
             pages = newpages
 
     # Create the database tables
     def createindextables(self):
-        self.con.execute('create table urllist(url)')
-        self.con.execute('create table wordlist(word)')
-        self.con.execute('create table wordlocation(urlid,wordid,location)')
-        self.con.execute('create table link(fromid integer,toid integer)')
-        self.con.execute('create table linkwords(wordid,linkid)')
-        self.con.execute('create index wordidx on wordlist(word)')
-        self.con.execute('create index urlidx on urllist(url)')
-        self.con.execute('create index wordurlidx on wordlocation(wordid)')
-        self.con.execute('create index urltoidx on link(toid)')
-        self.con.execute('create index urlfromidx on link(fromid)')
+        # tables
+        self.con.execute('create table if not exists urllist(url)')
+        self.con.execute('create table if not exists wordlist(word)')
+        self.con.execute('create table if not exists wordlocation(urlid,wordid,location)')
+        self.con.execute('create table if not exists link(fromid integer,toid integer)')
+        self.con.execute('create table if not exists linkwords(wordid,linkid)')
+
+        # indexes
+        # self.con.execute('create index wordidx on wordlist(word)')
+        # self.con.execute('create index urlidx on urllist(url)')
+        # self.con.execute('create index wordurlidx on wordlocatieon(wordid)')
+        # self.con.execute('create index urltoidx on link(toid)')
+        # self.con.execute('create index urlfromidx on link(fromid)')
         self.dbcommit()
 
     def calculatepagerank(self, iterations=20):
@@ -194,7 +206,7 @@ class searcher:
             # Get the word ID
             wordrow = self.con.execute(
                 "select rowid from wordlist where word='%s'" % word).fetchone()
-            if wordrow != None:
+            if wordrow is not None:
                 wordid = wordrow[0]
                 wordids.append(wordid)
                 if tablenumber > 0:
@@ -218,11 +230,11 @@ class searcher:
         totalscores = dict([(row[0], 0) for row in rows])
 
         # This is where we'll put our scoring functions
-        weights = [(1.0, self.locationscore(rows)),
-                   (1.0, self.frequencyscore(rows)),
-                   (1.0, self.pagerankscore(rows)),
-                   (1.0, self.linktextscore(rows, wordids)),
-                   (5.0, self.nnscore(rows, wordids))]
+        weights = [(1.0, self.locationscore(rows)),             # 单词位置得分
+                   (1.0, self.frequencyscore(rows)),            # 词频得分
+                   (1.0, self.pagerankscore(rows)),             # PageRank得分
+                   (1.0, self.linktextscore(rows, wordids))]    # 链接文字得分，依赖于PageRank
+                #    (5.0, self.nnscore(rows, wordids))]          # 用户点击，反向传播神经网络得分
         for (weight, scores) in weights:
             for url in totalscores:
                 totalscores[url] += weight*scores[url]
